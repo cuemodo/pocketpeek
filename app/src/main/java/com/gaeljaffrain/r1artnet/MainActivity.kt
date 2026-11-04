@@ -173,9 +173,7 @@ class MainActivity : Activity() {
 
     // ---------------------------------------------------------------- state changes
 
-    private fun universeLabel(u: Int) = "${(u shr 8) and 0x7f}:${(u shr 4) and 0xf}:${u and 0xf}"
-
-    private fun changeUniverse(delta: Int) = setUniverse((universe + delta).coerceIn(0, MAX_UNIVERSE))
+    private fun changeUniverse(delta: Int) = setUniverse((universe + delta).coerceIn(0, Universe.MAX))
 
     private fun setUniverse(u: Int) {
         if (u == universe) return
@@ -187,7 +185,7 @@ class MainActivity : Activity() {
     }
 
     private fun applyUniverse() {
-        universeChip.text = "U $universe · ${universeLabel(universe)}"
+        universeChip.text = "U $universe · ${Universe.label(universe)}"
         forceRedraw = true
         tick()
     }
@@ -249,7 +247,7 @@ class MainActivity : Activity() {
             .filter { now - it.lastSeenMs < 5000 }
             .sortedBy { it.universe }
         val items = active.map { st ->
-            "U ${st.universe}  (${universeLabel(st.universe)})  ${fps[st.universe] ?: 0} fps  ${st.source?.hostAddress ?: ""}"
+            "U ${st.universe}  (${Universe.label(st.universe)})  ${fps[st.universe] ?: 0} fps  ${st.source?.hostAddress ?: ""}"
         } + "Enter universe…"
         AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
             .setTitle(if (active.isEmpty()) "No Art-Net seen yet" else "Active universes")
@@ -267,24 +265,11 @@ class MainActivity : Activity() {
             selectAll()
         }
         AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
-            .setTitle("Art-Net universe (0–$MAX_UNIVERSE)")
+            .setTitle("Art-Net universe (0–${Universe.MAX})")
             .setView(input)
-            .setPositiveButton("OK") { _, _ -> parseUniverse(input.text.toString())?.let(::setUniverse) }
+            .setPositiveButton("OK") { _, _ -> Universe.parse(input.text.toString())?.let(::setUniverse) }
             .setNegativeButton("Cancel", null)
             .show()
-    }
-
-    /** "12" (15-bit port address) or "net:sub:uni" / "net.sub.uni". */
-    private fun parseUniverse(s: String): Int? {
-        val parts = s.trim().split(':', '.', ' ').filter { it.isNotEmpty() }.map { it.toIntOrNull() ?: return null }
-        return when (parts.size) {
-            1 -> parts[0].takeIf { it in 0..MAX_UNIVERSE }
-            3 -> {
-                val (n, sub, u) = parts
-                if (n in 0..127 && sub in 0..15 && u in 0..15) (n shl 8) or (sub shl 4) or u else null
-            }
-            else -> null
-        }
     }
 
     // ---------------------------------------------------------------- refresh loop
@@ -348,7 +333,7 @@ class MainActivity : Activity() {
         val (color, text) = when {
             err != null -> Palette.BAD to "Socket error: $err"
             live -> Palette.OK to "${fps[universe] ?: 0} fps  ·  ${st!!.source?.hostAddress}"
-            stale -> Palette.WARN to "No signal ${ago(now - st!!.lastSeenMs)}  ·  holding$active"
+            stale -> Palette.WARN to "No signal ${formatAgo(now - st!!.lastSeenMs)}  ·  holding$active"
             others.isNotEmpty() -> Palette.WARN to "No data on U $universe$active"
             else -> {
                 val ip = ArtNetReceiver.localIpv4()?.first?.hostAddress ?: "no network"
@@ -358,15 +343,6 @@ class MainActivity : Activity() {
         (statusDot.background as GradientDrawable).setColor(color)
         statusText.setTextColor(if (live) Palette.TEXT else color)
         statusText.text = text
-    }
-
-    private fun ago(ms: Long): String {
-        val s = ms / 1000
-        return when {
-            s < 60 -> "$s s"
-            s < 3600 -> "${s / 60} min"
-            else -> "${s / 3600} h"
-        }
     }
 
     // ---------------------------------------------------------------- lifecycle
@@ -430,7 +406,6 @@ class MainActivity : Activity() {
     companion object {
         private const val TAG = "R1ArtNet"
         private const val FRAME_MS = 33L
-        private const val MAX_UNIVERSE = 32767
         /** No packet for this long = signal lost (sACN uses the same 2.5 s data-loss timeout). */
         private const val STALE_MS = 2500L
         private const val STALE_ALPHA = 0.35f

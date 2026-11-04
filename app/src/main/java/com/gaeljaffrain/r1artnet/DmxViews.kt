@@ -171,7 +171,7 @@ class DmxGridView(ctx: Context) : View(ctx) {
     }
 }
 
-/** One tab per page (16); each tab's fill shows the highest level on that page, the current one is outlined. */
+/** One tab per page, 16 tabs in 2 rows of 8; each tab's fill shows the highest level on that page, the current one is outlined. */
 @SuppressLint("ViewConstructor")
 class PageBarView(ctx: Context) : View(ctx) {
     val pageMax = IntArray(PAGES)
@@ -186,30 +186,34 @@ class PageBarView(ctx: Context) : View(ctx) {
         fontFeatureSettings = "tnum"
     }
     private val rect = RectF()
-    private val gap = dp(2f)
-    private val radius = dp(3f)
+    private val gap = dp(3f)
+    private val radius = dp(4f)
+    private val rowH = dp(30f)
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
-        setMeasuredDimension(MeasureSpec.getSize(widthMeasureSpec), dp(36f).toInt())
+        setMeasuredDimension(MeasureSpec.getSize(widthMeasureSpec), (rowH * ROWS + gap * (ROWS - 1)).toInt())
     }
 
     @SuppressLint("ClickableViewAccessibility")
     override fun onTouchEvent(event: MotionEvent): Boolean {
         // Tap or drag along the bar to scrub through pages.
         if (event.action == MotionEvent.ACTION_DOWN || event.action == MotionEvent.ACTION_MOVE) {
-            val p = (event.x / (width / PAGES.toFloat())).toInt().coerceIn(0, PAGES - 1)
+            val c = (event.x / (width / PER_ROW.toFloat())).toInt().coerceIn(0, PER_ROW - 1)
+            val r = (event.y / (height / ROWS.toFloat())).toInt().coerceIn(0, ROWS - 1)
+            val p = r * PER_ROW + c
             if (p != current) onPage?.invoke(p)
         }
         return true
     }
 
     override fun onDraw(canvas: Canvas) {
-        val w = (width - gap * (PAGES - 1)) / PAGES
-        val h = height.toFloat()
-        text.textSize = min(h * 0.42f, w * 0.55f)
+        val w = (width - gap * (PER_ROW - 1)) / PER_ROW
+        val h = rowH
+        text.textSize = min(h * 0.6f, w * 0.45f)
         for (p in 0 until PAGES) {
-            val x = p * (w + gap)
-            rect.set(x + 1, 1f, x + w - 1, h - 1)
+            val x = (p % PER_ROW) * (w + gap)
+            val y = (p / PER_ROW) * (h + gap)
+            rect.set(x + 1, y + 1, x + w - 1, y + h - 1)
             fill.color = Palette.PANEL
             canvas.drawRoundRect(rect, radius, radius, fill)
             val m = pageMax[p]
@@ -230,11 +234,13 @@ class PageBarView(ctx: Context) : View(ctx) {
                 isCur -> Palette.TEXT
                 else -> Palette.DIM
             }
-            canvas.drawText((p + 1).toString(), x + w / 2, h / 2 - (text.ascent() + text.descent()) / 2, text)
+            canvas.drawText((p + 1).toString(), x + w / 2, y + h / 2 - (text.ascent() + text.descent()) / 2, text)
         }
     }
 
     companion object {
         const val PAGES = 512 / DmxGridView.CELLS
+        const val ROWS = 2
+        const val PER_ROW = PAGES / ROWS
     }
 }

@@ -28,7 +28,12 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
     kotlinOptions { jvmTarget = "17" }
+
+    // JVM unit tests: android.jar stubs return 0/null (SystemClock, Log) instead of throwing.
+    testOptions { unitTests.isReturnDefaultValues = true }
 }
 
 // No AndroidX on purpose: plain framework views keep the APK tiny and fast on the R1.
-dependencies {}
+dependencies {
+    testImplementation("junit:junit:4.13.2")
+}
