@@ -1,4 +1,4 @@
-package com.gaeljaffrain.r1artnet
+package com.gaeljaffrain.pocketartnet
 
 /** Art-Net 15-bit port addresses: Net (7 bits), Sub-Net (4), Universe (4). */
 object Universe {

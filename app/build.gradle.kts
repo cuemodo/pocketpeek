@@ -4,11 +4,11 @@ plugins {
 }
 
 android {
-    namespace = "com.gaeljaffrain.r1artnet"
+    namespace = "com.gaeljaffrain.pocketartnet"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.gaeljaffrain.r1artnet"
+        applicationId = "com.gaeljaffrain.pocketartnet"
         minSdk = 22
         targetSdk = 35
         versionCode = 1

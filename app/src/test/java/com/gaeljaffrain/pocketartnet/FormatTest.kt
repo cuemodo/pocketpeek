@@ -1,4 +1,4 @@
-package com.gaeljaffrain.r1artnet
+package com.gaeljaffrain.pocketartnet
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -97,6 +97,11 @@ class GridShapeTest {
     @Test fun r1PortraitGetsFourByEight() {
         // R1: 480 x 640 px at density 190 -> ~389 x ~350 dp left for the grid.
         assertEquals(GridShape(4, 8), GridShape.choose(389f, 350f))
+    }
+
+    @Test fun phonePortraitGetsFourBySixteen() {
+        // Medium Phone emulator: 1080 x 2400 px at density 420 -> ~395 x ~750 dp for the grid.
+        assertEquals(GridShape(4, 16), GridShape.choose(395f, 750f))
     }
 
     @Test fun landscapeTabletGetsSixteenBySixteen() {

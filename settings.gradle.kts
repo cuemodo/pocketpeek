@@ -14,5 +14,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "R1ArtNet"
+rootProject.name = "PocketArtNet"
 include(":app")

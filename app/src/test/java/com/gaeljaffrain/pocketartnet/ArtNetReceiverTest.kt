@@ -1,4 +1,4 @@
-package com.gaeljaffrain.r1artnet
+package com.gaeljaffrain.pocketartnet
 
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
@@ -123,8 +123,8 @@ class ArtNetReceiverTest {
         assertEquals(1, r[173].toInt())                         // NumPorts
         assertEquals(0x80, r[174].toInt() and 0xff)             // output, DMX512
         assertEquals(0x80, r[182].toInt() and 0xff)             // GoodOutput: data received
-        assertEquals("R1 Art-Net", cString(r, 26, 18))
-        assertEquals("Rabbit R1 Art-Net Monitor", cString(r, 44, 64))
+        assertEquals("Pocket Art-Net", cString(r, 26, 18))
+        assertEquals("Pocket Art-Net DMX monitor", cString(r, 44, 64))
         assertEquals("#0001 [3] Monitoring universe 258", cString(r, 108, 64))
         assertArrayEquals(ip.address, r.copyOfRange(207, 211)) // BindIp
     }

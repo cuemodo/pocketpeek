@@ -1,4 +1,4 @@
-package com.gaeljaffrain.r1artnet
+package com.gaeljaffrain.pocketartnet
 
 import android.annotation.SuppressLint
 import android.content.Context
