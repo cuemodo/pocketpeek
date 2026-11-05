@@ -9,7 +9,7 @@ android {
 
     defaultConfig {
         applicationId = "com.gaeljaffrain.r1artnet"
-        minSdk = 26
+        minSdk = 22
         targetSdk = 35
         versionCode = 1
         versionName = "0.1"

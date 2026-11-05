@@ -82,8 +82,37 @@ class FormatTest {
         assertEquals(DisplayMode.PCT, DisplayMode.HEX.next())
     }
 
-    @Test fun pagingCoversAllChannels() {
-        assertEquals(512, DmxGridView.CELLS * PageBarView.PAGES)
-        assertEquals(PageBarView.PAGES, PageBarView.ROWS * PageBarView.PER_ROW)
+}
+
+class GridShapeTest {
+    @Test fun everyShapeDividesAUniverse() {
+        for (s in GridShape.CANDIDATES) assertEquals("$s", 512, s.cells * s.pages)
+    }
+
+    @Test fun candidatesAreOrderedByChannels() {
+        val cells = GridShape.CANDIDATES.map { it.cells }
+        assertEquals(cells.sortedDescending(), cells)
+    }
+
+    @Test fun r1PortraitGetsFourByEight() {
+        // R1: 480 x 640 px at density 190 -> ~389 x ~350 dp left for the grid.
+        assertEquals(GridShape(4, 8), GridShape.choose(389f, 350f))
+    }
+
+    @Test fun landscapeTabletGetsSixteenBySixteen() {
+        // 1280 x 800 photo frame at density 160: ~1264 x ~650 dp for the grid.
+        assertEquals(GridShape(16, 16), GridShape.choose(1264f, 650f))
+    }
+
+    @Test fun bigLandscapeShowsWholeUniverse() {
+        assertEquals(GridShape(32, 16), GridShape.choose(1900f, 1000f))
+    }
+
+    @Test fun portraitTabletUsesTallShapes() {
+        assertEquals(GridShape(8, 16), GridShape.choose(780f, 1000f))
+    }
+
+    @Test fun tinySpaceFallsBackToSmallest() {
+        assertEquals(GridShape.SMALLEST, GridShape.choose(100f, 100f))
     }
 }

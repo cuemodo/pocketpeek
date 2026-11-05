@@ -39,6 +39,10 @@ class MainActivity : Activity() {
 
     private var universe = 0
     private var page = 0
+    /** First channel (0-based) of the current page: kept when the grid shape changes. */
+    private var pageStart = 0
+    private val cells get() = grid.shape.cells
+    private val pages get() = grid.shape.pages
     private var mode = DisplayMode.PCT
     /** Selected channel 1..512, or 0. */
     private var selectedChannel = 0
@@ -60,10 +64,11 @@ class MainActivity : Activity() {
         super.onCreate(savedInstanceState)
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         universe = prefs.getInt("universe", 0)
-        page = prefs.getInt("page", 0).coerceIn(0, PageBarView.PAGES - 1)
+        pageStart = prefs.getInt("pageStart", 0).coerceIn(0, 511)
         mode = DisplayMode.entries.getOrElse(prefs.getInt("mode", 0)) { DisplayMode.PCT }
         receiver.selectedUniverse = universe
         setContentView(buildUi())
+        page = pageStart / cells
         applyUniverse()
         applyPage()
     }
@@ -146,11 +151,17 @@ class MainActivity : Activity() {
         status.addView(statusText)
         root.addView(status)
 
-        // Grid takes the remaining height, kept square.
+        // Grid takes the remaining space; its shape follows the size.
         grid = DmxGridView(this).apply {
             mode = this@MainActivity.mode
-            onCellTap = { i -> selectChannel(page * DmxGridView.CELLS + i + 1) }
+            onCellTap = { i -> selectChannel(page * cells + i + 1) }
             onSwipe = { d -> changePage(d) }
+            onShape = { s ->
+                page = pageStart / s.cells
+                pageBar.pages = s.pages
+                pageBar.visibility = if (s.pages > 1) View.VISIBLE else View.GONE
+                applyPage()
+            }
         }
         root.addView(grid, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f))
 
@@ -192,17 +203,18 @@ class MainActivity : Activity() {
 
     private fun changePage(delta: Int) {
         val p = page + delta
-        if (p in 0 until PageBarView.PAGES) setPage(p)
+        if (p in 0 until pages) setPage(p)
     }
 
     private fun setPage(p: Int) {
         page = p
-        prefs.edit().putInt("page", p).apply()
+        pageStart = p * cells
+        prefs.edit().putInt("pageStart", pageStart).apply()
         applyPage()
     }
 
     private fun applyPage() {
-        grid.firstChannel = page * DmxGridView.CELLS + 1
+        grid.firstChannel = page * cells + 1
         pageBar.current = page
         updateSelection()
         forceRedraw = true
@@ -225,16 +237,16 @@ class MainActivity : Activity() {
     }
 
     private fun updateSelection() {
-        val first = page * DmxGridView.CELLS + 1
-        grid.selected = if (selectedChannel in first until first + DmxGridView.CELLS) selectedChannel - first else -1
+        val first = page * cells + 1
+        grid.selected = if (selectedChannel in first until first + cells) selectedChannel - first else -1
         updateInfo()
     }
 
     private fun updateInfo() {
         val ch = selectedChannel
         infoText.text = if (ch == 0) {
-            val first = page * DmxGridView.CELLS + 1
-            "CH $first–${first + DmxGridView.CELLS - 1} · PAGE ${page + 1}/${PageBarView.PAGES}"
+            val first = page * cells + 1
+            "CH $first–${first + cells - 1} · PAGE ${page + 1}/${pages}"
         } else {
             val v = snapshot[ch - 1].toInt() and 0xff
             "CH %d = %d · %d%% · %02X".format(ch, v, pct(v), v)
@@ -289,11 +301,11 @@ class MainActivity : Activity() {
         if (forceRedraw || !snapshot.contentEquals(shown)) {
             snapshot.copyInto(shown)
             forceRedraw = false
-            snapshot.copyInto(grid.values, 0, page * DmxGridView.CELLS, (page + 1) * DmxGridView.CELLS)
+            snapshot.copyInto(grid.values, 0, page * cells, (page + 1) * cells)
             grid.invalidate()
-            for (p in 0 until PageBarView.PAGES) {
+            for (p in 0 until pages) {
                 var m = 0
-                for (i in p * DmxGridView.CELLS until (p + 1) * DmxGridView.CELLS) {
+                for (i in p * cells until (p + 1) * cells) {
                     val v = snapshot[i].toInt() and 0xff
                     if (v > m) m = v
                 }

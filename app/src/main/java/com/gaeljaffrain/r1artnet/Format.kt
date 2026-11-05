@@ -30,3 +30,33 @@ fun formatAgo(ms: Long): String {
         else -> "${s / 3600} h"
     }
 }
+
+/** Grid of [cols] x [rows] channels per page; always divides the 512 channels of a universe. */
+data class GridShape(val cols: Int, val rows: Int) {
+    val cells get() = cols * rows
+    val pages get() = 512 / cells
+
+    companion object {
+        /** Most channels first; each one divides 512. */
+        val CANDIDATES = listOf(
+            GridShape(32, 16), GridShape(16, 32),
+            GridShape(16, 16),
+            GridShape(16, 8), GridShape(8, 16),
+            GridShape(8, 8),
+            GridShape(4, 16),
+            GridShape(4, 8),
+        )
+        val SMALLEST = CANDIDATES.last()
+
+        /** Smallest readable cell: room for "512" next to "255" (or stacked, in square cells). */
+        const val MIN_CELL_W_DP = 56f
+        const val MIN_CELL_H_DP = 32f
+
+        /** The grid with the most channels whose cells stay readable in a [widthDp] x [heightDp] area. */
+        fun choose(widthDp: Float, heightDp: Float, gapDp: Float = 3f): GridShape =
+            CANDIDATES.firstOrNull { s ->
+                (widthDp - gapDp * (s.cols - 1)) / s.cols >= MIN_CELL_W_DP &&
+                    (heightDp - gapDp * (s.rows - 1)) / s.rows >= MIN_CELL_H_DP
+            } ?: SMALLEST
+    }
+}

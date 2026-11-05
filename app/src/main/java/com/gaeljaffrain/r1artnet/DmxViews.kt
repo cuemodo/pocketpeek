@@ -65,18 +65,23 @@ private fun View.drawSelectRing(canvas: Canvas, rect: RectF, radius: Float, pain
 }
 
 /**
- * One page of 32 channels as 4 columns x 8 rows, drawn like consolelink's .dmx-cell. Four wide cells
- * instead of eight square ones: on the R1's 44 mm wide screen that is what makes the numbers legible.
+ * One page of channels as a grid, drawn like consolelink's .dmx-cell. The shape adapts to the space
+ * ([GridShape.choose]): 4 x 8 on the R1's narrow screen, up to 32 x 16 (a whole universe) on a big one.
+ * Wide cells put the channel number and level side by side; squarer cells stack them.
  */
 @SuppressLint("ViewConstructor")
 class DmxGridView(ctx: Context) : View(ctx) {
-    val values = ByteArray(CELLS)
+    val values = ByteArray(512)
     var firstChannel = 1
     var mode = DisplayMode.PCT
     /** Selected cell on this page, or -1. */
     var selected = -1
+    var shape = GridShape.SMALLEST
+        private set
     var onCellTap: ((Int) -> Unit)? = null
     var onSwipe: ((Int) -> Unit)? = null
+    /** Called (posted) when the size picks a different [shape]. */
+    var onShape: ((GridShape) -> Unit)? = null
 
     private val fill = Paint(Paint.ANTI_ALIAS_FLAG)
     private val stroke = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE }
@@ -85,22 +90,23 @@ class DmxGridView(ctx: Context) : View(ctx) {
     }
     private val lvlPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-        textAlign = Paint.Align.RIGHT
         fontFeatureSettings = "tnum"
     }
     private val rect = RectF()
     private val addrLabels = Array(513) { it.toString() }
-    private val gap = dp(3f)
+    private val gapDp = 3f
+    private val gap = dp(gapDp)
     private val radius = dp(4f)
     private var cellW = 0f
     private var cellH = 0f
+    private var wide = true
 
     private val gestures = GestureDetector(ctx, object : GestureDetector.SimpleOnGestureListener() {
         override fun onDown(e: MotionEvent) = true
         override fun onSingleTapUp(e: MotionEvent): Boolean {
             val c = (e.x / (cellW + gap)).toInt()
             val r = (e.y / (cellH + gap)).toInt()
-            if (c in 0 until COLS && r in 0 until ROWS) onCellTap?.invoke(r * COLS + c)
+            if (c in 0 until shape.cols && r in 0 until shape.rows) onCellTap?.invoke(r * shape.cols + c)
             return true
         }
         override fun onFling(e1: MotionEvent?, e2: MotionEvent, vx: Float, vy: Float): Boolean {
@@ -115,12 +121,26 @@ class DmxGridView(ctx: Context) : View(ctx) {
     }
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
-        cellW = (w - gap * (COLS - 1)) / COLS
-        cellH = (h - gap * (ROWS - 1)) / ROWS
-        // Channel number left, level right, on one line; both sized from the row height,
-        // capped so "512" + "255" always fit side by side.
-        addrPaint.textSize = min(cellH * 0.42f, cellW * 0.20f)
-        lvlPaint.textSize = min(cellH * 0.62f, cellW * 0.28f)
+        val density = resources.displayMetrics.density
+        val s = GridShape.choose(w / density, h / density, gapDp)
+        val changed = s != shape
+        shape = s
+        cellW = (w - gap * (s.cols - 1)) / s.cols
+        cellH = (h - gap * (s.rows - 1)) / s.rows
+        wide = cellW / cellH >= 1.6f
+        if (wide) {
+            // Channel number left, level right, on one line; capped so "512" + "255" fit side by side.
+            addrPaint.textSize = min(cellH * 0.42f, cellW * 0.20f)
+            lvlPaint.textSize = min(cellH * 0.62f, cellW * 0.28f)
+            lvlPaint.textAlign = Paint.Align.RIGHT
+        } else {
+            // Channel number small in the corner, level centred below it.
+            val c = min(cellW, cellH * 1.25f)
+            addrPaint.textSize = c * 0.24f
+            lvlPaint.textSize = c * 0.40f
+            lvlPaint.textAlign = Paint.Align.CENTER
+        }
+        if (changed) post { onShape?.invoke(s) }
     }
 
     @SuppressLint("ClickableViewAccessibility")
@@ -128,12 +148,15 @@ class DmxGridView(ctx: Context) : View(ctx) {
 
     override fun onDraw(canvas: Canvas) {
         val labels = mode.labels
-        val padX = cellW * 0.08f
-        val addrBaseline = cellH / 2 - (addrPaint.ascent() + addrPaint.descent()) / 2
-        val lvlBaseline = cellH / 2 - (lvlPaint.ascent() + lvlPaint.descent()) / 2
-        for (i in 0 until CELLS) {
-            val x = (i % COLS) * (cellW + gap)
-            val y = (i / COLS) * (cellH + gap)
+        val cols = shape.cols
+        val padX = if (wide) cellW * 0.08f else min(cellW, cellH) * 0.08f
+        val addrBaseline = if (wide) cellH / 2 - (addrPaint.ascent() + addrPaint.descent()) / 2 else padX - addrPaint.ascent()
+        val lvlBaseline = if (wide) cellH / 2 - (lvlPaint.ascent() + lvlPaint.descent()) / 2
+            else cellH * 0.60f - (lvlPaint.ascent() + lvlPaint.descent()) / 2
+        val lvlX = if (wide) cellW - padX else cellW / 2
+        for (i in 0 until shape.cells) {
+            val x = (i % cols) * (cellW + gap)
+            val y = (i / cols) * (cellH + gap)
             val v = values[i].toInt() and 0xff
             val bright = v >= 128
             rect.set(x + 0.5f, y + 0.5f, x + cellW - 0.5f, y + cellH - 0.5f)
@@ -159,24 +182,23 @@ class DmxGridView(ctx: Context) : View(ctx) {
 
             if (v > 0) {
                 lvlPaint.color = if (bright) Palette.DARKTEXT else Palette.TEXT
-                canvas.drawText(labels[v], x + cellW - padX, y + lvlBaseline, lvlPaint)
+                canvas.drawText(labels[v], x + lvlX, y + lvlBaseline, lvlPaint)
             }
         }
     }
-
-    companion object {
-        const val COLS = 4
-        const val ROWS = 8
-        const val CELLS = COLS * ROWS
-    }
 }
 
-/** One tab per page, 16 tabs in 2 rows of 8; each tab's fill shows the highest level on that page, the current one is outlined. */
+/** One tab per page, at most 8 per row; each tab's fill shows the highest level on that page, the current one is outlined. */
 @SuppressLint("ViewConstructor")
 class PageBarView(ctx: Context) : View(ctx) {
-    val pageMax = IntArray(PAGES)
+    val pageMax = IntArray(32)
     var current = 0
+    var pages = GridShape.SMALLEST.pages
+        set(value) { if (field != value) { field = value; requestLayout(); invalidate() } }
     var onPage: ((Int) -> Unit)? = null
+
+    private val perRow get() = min(pages, MAX_PER_ROW)
+    private val rows get() = (pages + perRow - 1) / perRow
 
     private val fill = Paint(Paint.ANTI_ALIAS_FLAG)
     private val stroke = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE }
@@ -191,28 +213,29 @@ class PageBarView(ctx: Context) : View(ctx) {
     private val rowH = dp(30f)
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
-        setMeasuredDimension(MeasureSpec.getSize(widthMeasureSpec), (rowH * ROWS + gap * (ROWS - 1)).toInt())
+        setMeasuredDimension(MeasureSpec.getSize(widthMeasureSpec), (rowH * rows + gap * (rows - 1)).toInt())
     }
 
     @SuppressLint("ClickableViewAccessibility")
     override fun onTouchEvent(event: MotionEvent): Boolean {
         // Tap or drag along the bar to scrub through pages.
         if (event.action == MotionEvent.ACTION_DOWN || event.action == MotionEvent.ACTION_MOVE) {
-            val c = (event.x / (width / PER_ROW.toFloat())).toInt().coerceIn(0, PER_ROW - 1)
-            val r = (event.y / (height / ROWS.toFloat())).toInt().coerceIn(0, ROWS - 1)
-            val p = r * PER_ROW + c
+            val c = (event.x / (width / perRow.toFloat())).toInt().coerceIn(0, perRow - 1)
+            val r = (event.y / (height / rows.toFloat())).toInt().coerceIn(0, rows - 1)
+            val p = (r * perRow + c).coerceIn(0, pages - 1)
             if (p != current) onPage?.invoke(p)
         }
         return true
     }
 
     override fun onDraw(canvas: Canvas) {
-        val w = (width - gap * (PER_ROW - 1)) / PER_ROW
+        val per = perRow
+        val w = (width - gap * (per - 1)) / per
         val h = rowH
         text.textSize = min(h * 0.6f, w * 0.45f)
-        for (p in 0 until PAGES) {
-            val x = (p % PER_ROW) * (w + gap)
-            val y = (p / PER_ROW) * (h + gap)
+        for (p in 0 until pages) {
+            val x = (p % per) * (w + gap)
+            val y = (p / per) * (h + gap)
             rect.set(x + 1, y + 1, x + w - 1, y + h - 1)
             fill.color = Palette.PANEL
             canvas.drawRoundRect(rect, radius, radius, fill)
@@ -239,8 +262,6 @@ class PageBarView(ctx: Context) : View(ctx) {
     }
 
     companion object {
-        const val PAGES = 512 / DmxGridView.CELLS
-        const val ROWS = 2
-        const val PER_ROW = PAGES / ROWS
+        const val MAX_PER_ROW = 8
     }
 }
