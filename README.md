@@ -1,4 +1,8 @@
+<img src="docs/images/pocket-art-net-icon.png" alt="The Pocket Art-Net app icon: a grid of green channel levels with one warm lit cell" width="128">
+
 # Pocket Art-Net
+
+by [Cuemodo](https://cuemodo.io)
 
 Art-Net DMX monitor for small Android screens, built for the Rabbit R1 (CipherOS) and sideloaded with
 adb. It runs on Android 5.1 (API 22) and later, phones and tablets included. Colors follow the DMX tab
@@ -47,7 +51,7 @@ emulator receives packets sent from inside itself (127.0.0.1), hence the low fra
 ```sh
 ./gradlew assembleDebug                      # add --offline when the Gradle cache is warm
 adb install -r app/build/outputs/apk/debug/app-debug.apk
-adb shell am start -n com.gaeljaffrain.pocketartnet/.MainActivity
+adb shell am start -n io.cuemodo.pocketartnet/.MainActivity
 ```
 
 ## Unit tests
@@ -83,3 +87,7 @@ handles it (sleep/lock) and apps can't remap it. Unmapped keys are logged; to se
 ```sh
 adb logcat -s PocketArtNet
 ```
+
+## Credits
+
+Art-Net™ Designed by and Copyright Artistic Licence Engineering Ltd

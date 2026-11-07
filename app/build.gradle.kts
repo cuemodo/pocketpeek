@@ -4,11 +4,11 @@ plugins {
 }
 
 android {
-    namespace = "com.gaeljaffrain.pocketartnet"
+    namespace = "io.cuemodo.pocketartnet"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.gaeljaffrain.pocketartnet"
+        applicationId = "io.cuemodo.pocketartnet"
         minSdk = 22
         targetSdk = 35
         versionCode = 1

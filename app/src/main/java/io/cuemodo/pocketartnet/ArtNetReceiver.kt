@@ -1,4 +1,4 @@
-package com.gaeljaffrain.pocketartnet
+package io.cuemodo.pocketartnet
 
 import android.os.SystemClock
 import android.util.Log

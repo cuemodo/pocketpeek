@@ -1,4 +1,4 @@
-package com.gaeljaffrain.pocketartnet
+package io.cuemodo.pocketartnet
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull

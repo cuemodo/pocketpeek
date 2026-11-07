@@ -1,4 +1,4 @@
-package com.gaeljaffrain.pocketartnet
+package io.cuemodo.pocketartnet
 
 import android.app.Activity
 import android.app.AlertDialog
