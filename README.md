@@ -91,3 +91,7 @@ adb logcat -s PocketArtNet
 ## Credits
 
 Art-Net™ Designed by and Copyright Artistic Licence Engineering Ltd
+
+## License
+
+MIT. See [LICENSE](LICENSE).
