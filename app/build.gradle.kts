@@ -16,11 +16,25 @@ android {
         base.archivesName.set("pocketpeek-${versionName}")
     }
 
+    // Release key comes from the environment (GitHub secrets in CI). Without it, release builds fall
+    // back to this machine's debug key so `assembleRelease` still works locally; don't distribute
+    // those APKs, as they can't update (or be updated by) properly signed ones.
+    val releaseKeystore = System.getenv("POCKETPEEK_KEYSTORE")?.takeIf { it.isNotBlank() }
+    signingConfigs {
+        if (releaseKeystore != null) {
+            create("release") {
+                storeFile = file(releaseKeystore)
+                storePassword = System.getenv("POCKETPEEK_KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("POCKETPEEK_KEY_ALIAS")
+                keyPassword = System.getenv("POCKETPEEK_KEY_PASSWORD")
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
-            // Debug-signed: this app is only ever sideloaded with adb.
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.findByName("release") ?: signingConfigs.getByName("debug")
         }
     }
 
