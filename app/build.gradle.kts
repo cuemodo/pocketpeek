@@ -11,8 +11,13 @@ android {
         applicationId = "io.cuemodo.pocketpeek"
         minSdk = 22
         targetSdk = 35
-        versionCode = 1
+        // Bump versionName only; versionCode follows it (0.2 -> 200, 1.4.3 -> 10403) so every release
+        // installs as an update. The release workflow checks the git tag matches (v0.2).
         versionName = "0.1"
+        versionCode = versionName!!.split(".").let { p ->
+            require(p.size in 2..3 && p.all { it.toIntOrNull() in 0..99 }) { "versionName must be X.Y or X.Y.Z" }
+            p[0].toInt() * 10000 + p[1].toInt() * 100 + p.getOrElse(2) { "0" }.toInt()
+        }
         base.archivesName.set("pocketpeek-${versionName}")
     }
 
