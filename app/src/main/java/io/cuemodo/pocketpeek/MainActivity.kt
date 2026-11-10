@@ -1,4 +1,4 @@
-package io.cuemodo.pocketartnet
+package io.cuemodo.pocketpeek
 
 import android.app.Activity
 import android.app.AlertDialog
@@ -382,7 +382,7 @@ class MainActivity : Activity() {
 
     // ---------------------------------------------------------------- hardware input
     // The R1 scroll wheel and buttons: map every plausible key to page/universe moves and log
-    // the rest, so `adb logcat -s PocketArtNet` shows what the hardware actually sends.
+    // the rest, so `adb logcat -s PocketPeek` shows what the hardware actually sends.
 
     // dispatchKeyEvent, not onKeyDown: a focused chip would otherwise eat D-pad keys for focus moves.
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
@@ -416,7 +416,7 @@ class MainActivity : Activity() {
     }
 
     companion object {
-        private const val TAG = "PocketArtNet"
+        private const val TAG = "PocketPeek"
         private const val FRAME_MS = 33L
         /** No packet for this long = signal lost (sACN uses the same 2.5 s data-loss timeout). */
         private const val STALE_MS = 2500L

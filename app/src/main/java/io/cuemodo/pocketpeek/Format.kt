@@ -1,4 +1,4 @@
-package io.cuemodo.pocketartnet
+package io.cuemodo.pocketpeek
 
 /** Art-Net 15-bit port addresses: Net (7 bits), Sub-Net (4), Universe (4). */
 object Universe {

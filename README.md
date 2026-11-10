@@ -1,6 +1,6 @@
-<img src="docs/images/pocket-art-net-icon.png" alt="The Pocket Art-Net app icon: a grid of green channel levels with one warm lit cell" width="128">
+<img src="docs/images/pocketpeek-icon.png" alt="The PocketPeek app icon: a grid of green channel levels with one warm lit cell" width="128">
 
-# Pocket Art-Net
+# PocketPeek
 
 by [Cuemodo](https://cuemodo.io)
 
@@ -20,7 +20,7 @@ of consolelink.
 - Tap a cell for a live readout of that channel; tap the readout line to clear it.
 - Pages: swipe left/right, tap or drag along the page bar, or use the scroll wheel (it sends volume keys).
 - No data for 2.5 s: the grid dims and holds the last look, and the status line counts the time.
-- Answers ArtPoll, so consoles that only send to discovered nodes find it as "Pocket Art-Net" with one output
+- Answers ArtPoll, so consoles that only send to discovered nodes find it as "PocketPeek" with one output
   on the selected universe.
 
 ## Tested devices
@@ -50,8 +50,8 @@ emulator receives packets sent from inside itself (127.0.0.1), hence the low fra
 
 ```sh
 ./gradlew assembleDebug                      # add --offline when the Gradle cache is warm
-adb install -r app/build/outputs/apk/debug/app-debug.apk
-adb shell am start -n io.cuemodo.pocketartnet/.MainActivity
+adb install -r app/build/outputs/apk/debug/pocketpeek-*-debug.apk
+adb shell am start -n io.cuemodo.pocketpeek/.MainActivity
 ```
 
 ## Unit tests
@@ -85,7 +85,7 @@ The scroll wheel sends volume up/down keys, which change page. The side button i
 handles it (sleep/lock) and apps can't remap it. Unmapped keys are logged; to see what other hardware sends:
 
 ```sh
-adb logcat -s PocketArtNet
+adb logcat -s PocketPeek
 ```
 
 ## Credits

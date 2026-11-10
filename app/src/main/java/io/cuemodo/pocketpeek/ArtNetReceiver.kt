@@ -1,4 +1,4 @@
-package io.cuemodo.pocketartnet
+package io.cuemodo.pocketpeek
 
 import android.os.SystemClock
 import android.util.Log
@@ -134,8 +134,8 @@ class ArtNetReceiver {
             r[19] = ((uni shr 4) and 0x0f).toByte()          // SubSwitch
             r[20] = 0x00; r[21] = 0xff.toByte()              // OEM unknown
             r[23] = 0xd0.toByte()                            // Status1: indicators normal, front-panel addressing
-            ascii("Pocket Art-Net", r, 26, 18)
-            ascii("Pocket Art-Net DMX monitor", r, 44, 64)
+            ascii("PocketPeek", r, 26, 18)
+            ascii("PocketPeek DMX monitor", r, 44, 64)
             ascii("#0001 [${polls % 10000}] Monitoring universe $uni", r, 108, 64)
             r[173] = 1                                       // NumPorts
             r[174] = 0x80.toByte()                           // port 0: output, DMX512
@@ -147,7 +147,7 @@ class ArtNetReceiver {
             r[212] = 0x08                                    // Status2: 15-bit port address
             return r
         }
-        private const val TAG = "PocketArtNet"
+        private const val TAG = "PocketPeek"
         private const val OP_POLL = 0x2000
         private const val OP_DMX = 0x5000
         private val HEADER = "Art-Net\u0000".toByteArray(Charsets.US_ASCII)

@@ -1,4 +1,4 @@
-package io.cuemodo.pocketartnet
+package io.cuemodo.pocketpeek
 
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
@@ -123,8 +123,8 @@ class ArtNetReceiverTest {
         assertEquals(1, r[173].toInt())                         // NumPorts
         assertEquals(0x80, r[174].toInt() and 0xff)             // output, DMX512
         assertEquals(0x80, r[182].toInt() and 0xff)             // GoodOutput: data received
-        assertEquals("Pocket Art-Net", cString(r, 26, 18))
-        assertEquals("Pocket Art-Net DMX monitor", cString(r, 44, 64))
+        assertEquals("PocketPeek", cString(r, 26, 18))
+        assertEquals("PocketPeek DMX monitor", cString(r, 44, 64))
         assertEquals("#0001 [3] Monitoring universe 258", cString(r, 108, 64))
         assertArrayEquals(ip.address, r.copyOfRange(207, 211)) // BindIp
     }
