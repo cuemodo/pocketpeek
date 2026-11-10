@@ -91,7 +91,7 @@ The release key lives in repository secrets (Settings → Secrets and variables 
 | `POCKETPEEK_KEYSTORE_BASE64` | output of `base64 -i pocketpeek-release.jks` |
 | `POCKETPEEK_KEYSTORE_PASSWORD` | keystore password |
 | `POCKETPEEK_KEY_ALIAS` | `pocketpeek` |
-| `POCKETPEEK_KEY_PASSWORD` | key password |
+| `POCKETPEEK_KEY_PASSWORD` | key password: same as the keystore password (`keytool` asks for only one) |
 
 The keystore is created once with:
 
