@@ -1,0 +1,81 @@
+name: Release
+
+# Push a tag matching versionName in app/build.gradle.kts, e.g.:
+#   git tag v0.2 && git push origin v0.2
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write # create the GitHub Release
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Check tag matches versionName
+        run: |
+          version=$(sed -n 's/^ *versionName = "\(.*\)"/\1/p' app/build.gradle.kts)
+          if [ "v$version" != "$GITHUB_REF_NAME" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match versionName $version in app/build.gradle.kts"
+            exit 1
+          fi
+          echo "VERSION=$version" >> "$GITHUB_ENV"
+
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 17
+
+      # Caches Gradle and validates the wrapper jar. The Android SDK is preinstalled on the runner.
+      # 'basic' keeps caching on the open-source (MIT) provider instead of the commercial default.
+      - uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-provider: basic
+
+      - name: Unit tests
+        run: ./gradlew testDebugUnitTest
+
+      - name: Decode keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.POCKETPEEK_KEYSTORE_BASE64 }}
+        run: |
+          if [ -z "$KEYSTORE_BASE64" ]; then
+            echo "::error::Secret POCKETPEEK_KEYSTORE_BASE64 is not set"
+            exit 1
+          fi
+          echo "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/release.jks"
+          echo "POCKETPEEK_KEYSTORE=$RUNNER_TEMP/release.jks" >> "$GITHUB_ENV"
+
+      - name: Build signed APK
+        env:
+          POCKETPEEK_KEYSTORE_PASSWORD: ${{ secrets.POCKETPEEK_KEYSTORE_PASSWORD }}
+          POCKETPEEK_KEY_ALIAS: ${{ secrets.POCKETPEEK_KEY_ALIAS }}
+          POCKETPEEK_KEY_PASSWORD: ${{ secrets.POCKETPEEK_KEY_PASSWORD }}
+        run: ./gradlew assembleRelease
+
+      # Fails the release if the APK fell back to the debug key.
+      - name: Verify signature and package
+        run: |
+          apksigner="$ANDROID_HOME/build-tools/$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -1)/apksigner"
+          apk="app/build/outputs/apk/release/pocketpeek-$VERSION-release.apk"
+          certs=$("$apksigner" verify --print-certs "$apk")
+          echo "$certs"
+          if echo "$certs" | grep -q "CN=Android Debug"; then
+            echo "::error::APK is signed with the debug key"
+            exit 1
+          fi
+          mkdir dist
+          cp "$apk" "dist/pocketpeek-$VERSION.apk"
+          (cd dist && sha256sum "pocketpeek-$VERSION.apk" > "pocketpeek-$VERSION.apk.sha256")
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" dist/* \
+            --title "PocketPeek $VERSION" \
+            --generate-notes
