@@ -77,7 +77,12 @@ reverse): `adb uninstall io.cuemodo.pocketpeek` first. Uninstalling clears the a
 ## Releasing
 
 1. Set `versionName` in `app/build.gradle.kts` (`versionCode` follows it: `0.2` → 200) and commit.
-2. Tag and push: `git tag v0.2 && git push origin main v0.2`.
+2. Create an annotated tag and push it with `main`:
+
+   ```sh
+   git tag -a v0.2 -m "PocketPeek 0.2"
+   git push --follow-tags origin main
+   ```
 
 `.github/workflows/release.yml` checks that the tag matches `versionName`, runs the unit tests, builds a
 signed APK, refuses it if it is debug-signed, and publishes a GitHub Release with `pocketpeek-0.2.apk`
