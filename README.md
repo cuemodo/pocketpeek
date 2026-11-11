@@ -18,6 +18,8 @@ No computer needed. On the Android device:
    and tap **Install**.
 4. If Play Protect warns about an unknown developer, tap **More details** → **Install anyway**.
 
+Alternatively, you can sideload the apk from a computer with : `adb install -r <path to apk>`
+
 To update, install the newer APK the same way; your settings are kept. To be notified of new versions,
 add `https://github.com/cuemodo/pocketpeek` to [Obtainium](https://obtainium.imranr.dev/).
 
