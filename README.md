@@ -7,6 +7,8 @@ by [Cuemodo](https://cuemodo.io)
 Art-Net DMX monitor for small Android screens, built for the Rabbit R1 (CipherOS). It runs on
 Android 5.1 (API 22) and later, phones and tablets included. Colors follow the DMX tab of consolelink.
 
+<img src="docs/images/pocketpeek-r1.jpg" alt="PocketPeek on a Rabbit R1 held in hand, showing channels 129 to 192 of universe 0 with live levels on page 3 of 8" width="400">
+
 ## Install
 
 No computer needed. On the Android device:
